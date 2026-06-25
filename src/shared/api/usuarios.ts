@@ -15,5 +15,5 @@ export const changePassword = (carnet: string, password: string) =>
 
 export const deactivateUsuario = (carnet: string) => api.delete(`/usuarios/${carnet}`)
 
-export const toggleUsuarioActivo = (carnet: string, activo: boolean) =>
-  api.patch(`/usuarios/${carnet}`, { activo })
+export const toggleUsuarioActivo = (carnet: string) =>
+  api.patch(`/usuarios/${carnet}/toggle-active`)

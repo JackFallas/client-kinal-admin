@@ -90,10 +90,12 @@ export const UsuariosPage = () => {
   const handleToggle = async (carnet: string, activo: boolean) => {
     if (!confirm(`¿Deseas ${activo ? 'desactivar' : 'activar'} este usuario?`)) return
     try {
-      await toggleUsuarioActivo(carnet, !activo)
+      await toggleUsuarioActivo(carnet)
       setUsuarios((prev) => prev.map((u) => u.carnet === carnet ? { ...u, activo: !activo } : u))
       toast.success(`Usuario ${activo ? 'desactivado' : 'activado'}`)
-    } catch { toast.error('Error al actualizar') }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Error al actualizar')
+    }
   }
 
   const inputCls = "w-full border border-blue-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ACC1] focus:border-transparent shadow-sm bg-white"
@@ -152,11 +154,14 @@ export const UsuariosPage = () => {
                   {u.seccion && <span className="bg-blue-50 text-[#0E6BA8] font-semibold px-2 py-0.5 rounded-full shrink-0">{u.seccion.codigo}</span>}
                 </div>
               </div>
-              {isCoord && (
+              {isCoord && u.id !== user?.id && (
                 <button onClick={() => handleToggle(u.carnet, u.activo)}
                   className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors ${u.activo ? 'text-red-500 hover:bg-red-50 border-red-200' : 'text-[#0E6BA8] hover:bg-blue-50 border-blue-200'}`}>
                   <FiSlash size={13} /> {u.activo ? 'Desactivar' : 'Activar'}
                 </button>
+              )}
+              {isCoord && u.id === user?.id && (
+                <span className="flex-shrink-0 text-xs text-slate-300 italic px-3">tu cuenta</span>
               )}
             </div>
           ))}
