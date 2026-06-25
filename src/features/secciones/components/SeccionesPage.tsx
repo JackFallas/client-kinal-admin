@@ -1,0 +1,162 @@
+import { useEffect, useState } from 'react'
+import { FiPlus, FiBook } from 'react-icons/fi'
+import { getSecciones, createSeccion } from '../../../shared/api/secciones'
+import { useAuthStore } from '../../auth/store/authStore'
+import toast from 'react-hot-toast'
+
+interface Seccion {
+  id: number
+  codigo: string
+  nombre: string
+  turno: 'MATUTINO' | 'VESPERTINO'
+  grado: number
+  carrera?: string
+  activa: boolean
+  _count?: { usuarios: number }
+}
+
+const EMPTY_FORM = { codigo: '', nombre: '', turno: 'MATUTINO', grado: '1', carrera: '' }
+
+export const SeccionesPage = () => {
+  const { user } = useAuthStore()
+  const [secciones, setSecciones] = useState<Seccion[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState({ ...EMPTY_FORM })
+  const [saving, setSaving] = useState(false)
+
+  const isCoord = user?.role === 'COORDINADOR' || user?.role === 'AUDITOR'
+
+  const load = () => {
+    setLoading(true)
+    getSecciones().then((r) => setSecciones(r.data)).catch(() => {}).finally(() => setLoading(false))
+  }
+
+  useEffect(() => { load() }, [])
+
+  const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await createSeccion({
+        codigo: form.codigo.toUpperCase(),
+        nombre: form.nombre,
+        turno: form.turno as 'MATUTINO' | 'VESPERTINO',
+        grado: Number(form.grado),
+        carrera: form.carrera || undefined,
+      })
+      toast.success('Sección creada')
+      setShowModal(false)
+      setForm({ ...EMPTY_FORM })
+      load()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Error al crear sección')
+    } finally { setSaving(false) }
+  }
+
+  const inputCls = "w-full border border-blue-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ACC1] focus:border-transparent shadow-sm bg-white"
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-[#0A2647]">Secciones</h1>
+          <p className="text-sm text-slate-400 mt-0.5">{secciones.length} secciones registradas</p>
+        </div>
+        {isCoord && (
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all">
+            <FiPlus size={16} /> Nueva sección
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-slate-400">Cargando...</p>
+      ) : secciones.length === 0 ? (
+        <div className="text-center py-16">
+          <FiBook size={40} className="text-slate-200 mx-auto mb-3" />
+          <p className="text-slate-400 text-sm">No hay secciones registradas</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {secciones.map((s) => (
+            <div key={s.id} className={`bg-white rounded-xl border shadow-sm p-5 ${!s.activa ? 'opacity-60 border-slate-100' : 'border-blue-50'}`}>
+              <div className="flex items-start justify-between mb-3">
+                <span className="text-xs font-bold text-[#0E6BA8] bg-blue-50 px-2 py-0.5 rounded-full">{s.codigo}</span>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.turno === 'MATUTINO' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700'}`}>
+                  {s.turno === 'MATUTINO' ? 'Matutino' : 'Vespertino'}
+                </span>
+              </div>
+              <p className="font-semibold text-[#0A2647] leading-tight">{s.nombre}</p>
+              <div className="mt-2 flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                <span>Grado {s.grado}</span>
+                {s.carrera && <span>· {s.carrera}</span>}
+                {s._count && <span>· {s._count.usuarios} estudiantes</span>}
+                {!s.activa && <span className="text-red-400 font-medium">· Inactiva</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
+            <div className="p-5 sm:p-6">
+              <h2 className="text-lg font-bold text-[#0A2647] mb-1">Nueva sección</h2>
+              <p className="text-xs text-slate-400 mb-5">
+                Académico: <code className="bg-slate-100 px-1 rounded">PE5A</code>
+                {'  '}Técnico: <code className="bg-slate-100 px-1 rounded">IN6CM</code>
+              </p>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Código *</label>
+                    <input type="text" value={form.codigo} onChange={(e) => set('codigo', e.target.value.toUpperCase())} required placeholder="PE5A"
+                      className={`${inputCls} font-mono`} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Grado *</label>
+                    <select value={form.grado} onChange={(e) => set('grado', e.target.value)} required className={inputCls}>
+                      {[1, 2, 3, 4, 5, 6].map((g) => <option key={g} value={g}>{g}°</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Nombre *</label>
+                  <input type="text" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} required placeholder="Informática 6to C Matutina" className={inputCls} />
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Turno *</label>
+                    <select value={form.turno} onChange={(e) => set('turno', e.target.value)} required className={inputCls}>
+                      <option value="MATUTINO">Matutino</option>
+                      <option value="VESPERTINO">Vespertino</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Carrera</label>
+                    <input type="text" value={form.carrera} onChange={(e) => set('carrera', e.target.value)} placeholder="Informática" className={inputCls} />
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button type="button" onClick={() => { setShowModal(false); setForm({ ...EMPTY_FORM }) }}
+                    className="flex-1 border border-blue-200 text-slate-600 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={saving}
+                    className="flex-1 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-60">
+                    {saving ? 'Creando...' : 'Crear sección'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
