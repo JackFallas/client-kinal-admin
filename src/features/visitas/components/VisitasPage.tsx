@@ -11,7 +11,7 @@ interface Visita {
   temperatura?: number
   presion?: string
   fechaHora: string
-  estudiante: { carnet: string; nombre: string; apellido: string; seccion?: { codigo: string } }
+  estudiante: { carnet: string; primerNombre: string; primerApellido: string; seccion?: { codigo: string } }
   alerta?: { mensaje: string; leida: boolean } | null
 }
 
@@ -38,7 +38,7 @@ export const VisitasPage = () => {
   const filtered = visitas.filter((v) => {
     if (!search) return true
     const q = search.toLowerCase()
-    return v.estudiante?.carnet.includes(q) || v.estudiante?.nombre.toLowerCase().includes(q) || v.motivo.toLowerCase().includes(q)
+    return v.estudiante?.carnet.includes(q) || v.estudiante?.primerNombre.toLowerCase().includes(q) || v.motivo.toLowerCase().includes(q)
   })
 
   return (
@@ -90,7 +90,7 @@ export const VisitasPage = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-sm font-semibold text-[#0A2647]">
-                      {v.estudiante.nombre} {v.estudiante.apellido}
+                      {v.estudiante.primerNombre} {v.estudiante.primerApellido}
                     </span>
                     <span className="text-xs text-slate-400 font-mono">{v.estudiante.carnet}</span>
                     {v.estudiante.seccion && (

@@ -13,8 +13,8 @@ interface Sesion {
   lastActiveAt: string
   usuario: {
     id: number
-    nombre: string
-    apellido: string
+    primerNombre: string
+    primerApellido: string
     email: string
     role: string
     seccion?: { codigo: string; nombre: string } | null
@@ -83,7 +83,7 @@ export const SesionesPage = () => {
   }, [lastUpdate])
 
   const handleKick = async (s: Sesion) => {
-    if (!confirm(`¿Cerrar sesión de ${s.usuario.nombre} ${s.usuario.apellido}?`)) return
+    if (!confirm(`¿Cerrar sesión de ${s.usuario.primerNombre} ${s.usuario.primerApellido}?`)) return
     setKicking(s.id)
     try {
       await kickSesion(s.id)
@@ -155,11 +155,11 @@ export const SesionesPage = () => {
                   <div key={s.id} className={`px-4 py-3.5 ${isSelf ? 'bg-blue-50/60' : ''}`}>
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0E6BA8] to-[#00ACC1] flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">
-                        {initials(s.usuario.nombre, s.usuario.apellido)}
+                        {initials(s.usuario.primerNombre, s.usuario.primerApellido)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-[#0A2647] text-sm">{s.usuario.nombre} {s.usuario.apellido}</p>
+                          <p className="font-semibold text-[#0A2647] text-sm">{s.usuario.primerNombre} {s.usuario.primerApellido}</p>
                           {isSelf && <span className="text-[10px] text-blue-400 font-medium">Tu sesión</span>}
                           <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${status.text}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${status.dot} ${status.pulse ? 'animate-pulse' : ''}`} />
@@ -245,10 +245,10 @@ export const SesionesPage = () => {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0E6BA8] to-[#00ACC1] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                            {initials(s.usuario.nombre, s.usuario.apellido)}
+                            {initials(s.usuario.primerNombre, s.usuario.primerApellido)}
                           </div>
                           <div>
-                            <p className="font-semibold text-[#0A2647] text-xs">{s.usuario.nombre} {s.usuario.apellido}</p>
+                            <p className="font-semibold text-[#0A2647] text-xs">{s.usuario.primerNombre} {s.usuario.primerApellido}</p>
                             <p className="text-slate-400 text-[10px]">{s.usuario.email}</p>
                             {isSelf && <span className="text-[10px] text-blue-400 font-medium">Tu sesión</span>}
                           </div>

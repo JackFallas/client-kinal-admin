@@ -7,16 +7,17 @@ import toast from 'react-hot-toast'
 
 interface Usuario {
   id: number
-  carnet: string
-  nombre: string
-  apellido: string
+  carnet?: string
+  primerNombre: string
+  primerApellido: string
   email?: string
   role: string
   activo: boolean
+  verificado: boolean
   seccion?: { codigo: string }
 }
 
-interface Seccion { id: number; codigo: string; nombre: string }
+interface Seccion { id: number; codigo: string; nombre: string; nivel: string }
 
 const ROLE_LABELS: Record<string, string> = {
   AUDITOR:     'Auditor',
@@ -32,18 +33,21 @@ const ROLE_COLORS: Record<string, string> = {
   ESTUDIANTE:  'bg-slate-100 text-slate-600',
 }
 
-const EMPTY_FORM = { carnet: '', nombre: '', apellido: '', email: '', password: '', role: 'ESTUDIANTE', seccionId: '' }
+const EMPTY_FORM = {
+  carnet: '', primerNombre: '', primerApellido: '',
+  email: '', password: '', role: 'ESTUDIANTE', seccionId: '',
+}
 
 export const UsuariosPage = () => {
   const { user } = useAuthStore()
-  const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [usuarios, setUsuarios]   = useState<Usuario[]>([])
   const [secciones, setSecciones] = useState<Seccion[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ ...EMPTY_FORM })
-  const [saving, setSaving] = useState(false)
+  const [form, setForm]           = useState({ ...EMPTY_FORM })
+  const [saving, setSaving]       = useState(false)
 
   const isCoord = user?.role === 'COORDINADOR' || user?.role === 'AUDITOR'
 
@@ -60,7 +64,9 @@ export const UsuariosPage = () => {
   const filtered = usuarios.filter((u) => {
     if (!search) return true
     const q = search.toLowerCase()
-    return u.carnet.includes(q) || u.nombre.toLowerCase().includes(q) || u.apellido.toLowerCase().includes(q)
+    return (u.carnet ?? '').includes(q)
+      || u.primerNombre.toLowerCase().includes(q)
+      || u.primerApellido.toLowerCase().includes(q)
   })
 
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }))
@@ -70,13 +76,13 @@ export const UsuariosPage = () => {
     setSaving(true)
     try {
       await createUsuario({
-        carnet: form.carnet,
-        nombre: form.nombre,
-        apellido: form.apellido,
-        email: form.email || undefined,
-        password: form.password,
-        role: form.role,
-        seccionId: form.seccionId ? Number(form.seccionId) : undefined,
+        carnet:         form.carnet || undefined,
+        primerNombre:   form.primerNombre,
+        primerApellido: form.primerApellido,
+        email:          form.email || undefined,
+        password:       form.password,
+        role:           form.role,
+        seccionId:      form.seccionId ? Number(form.seccionId) : undefined,
       })
       toast.success('Usuario creado')
       setShowModal(false)
@@ -142,12 +148,13 @@ export const UsuariosPage = () => {
             <div key={u.id} className={`bg-white rounded-xl border shadow-sm p-4 flex items-center justify-between gap-3 ${!u.activo ? 'opacity-60 border-slate-100' : 'border-blue-50'}`}>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  <span className="font-semibold text-[#0A2647] truncate">{u.nombre} {u.apellido}</span>
-                  <span className="text-xs text-slate-400 font-mono shrink-0">{u.carnet}</span>
+                  <span className="font-semibold text-[#0A2647] truncate">{u.primerNombre} {u.primerApellido}</span>
+                  {u.carnet && <span className="text-xs text-slate-400 font-mono shrink-0">{u.carnet}</span>}
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${ROLE_COLORS[u.role]}`}>
                     {ROLE_LABELS[u.role]}
                   </span>
                   {!u.activo && <span className="text-xs font-semibold text-red-500 shrink-0">Inactivo</span>}
+                  {!u.verificado && <span className="text-xs font-semibold text-amber-500 shrink-0">Sin verificar</span>}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
                   {u.email && <span className="truncate max-w-[160px] sm:max-w-none">{u.email}</span>}
@@ -155,7 +162,7 @@ export const UsuariosPage = () => {
                 </div>
               </div>
               {isCoord && u.id !== user?.id && (
-                <button onClick={() => handleToggle(u.carnet, u.activo)}
+                <button onClick={() => handleToggle(u.carnet!, u.activo)}
                   className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors ${u.activo ? 'text-red-500 hover:bg-red-50 border-red-200' : 'text-[#0E6BA8] hover:bg-blue-50 border-blue-200'}`}>
                   <FiSlash size={13} /> {u.activo ? 'Desactivar' : 'Activar'}
                 </button>
@@ -176,8 +183,8 @@ export const UsuariosPage = () => {
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Carnet *</label>
-                    <input type="text" value={form.carnet} onChange={(e) => set('carnet', e.target.value)} maxLength={7} required placeholder="2024001" className={inputCls} />
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Carnet</label>
+                    <input type="text" value={form.carnet} onChange={(e) => set('carnet', e.target.value)} maxLength={7} placeholder="2024001" className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Rol *</label>
@@ -186,12 +193,12 @@ export const UsuariosPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Nombre *</label>
-                    <input type="text" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} required className={inputCls} />
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Primer nombre *</label>
+                    <input type="text" value={form.primerNombre} onChange={(e) => set('primerNombre', e.target.value)} required className={inputCls} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Apellido *</label>
-                    <input type="text" value={form.apellido} onChange={(e) => set('apellido', e.target.value)} required className={inputCls} />
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Primer apellido *</label>
+                    <input type="text" value={form.primerApellido} onChange={(e) => set('primerApellido', e.target.value)} required className={inputCls} />
                   </div>
                 </div>
                 <div>

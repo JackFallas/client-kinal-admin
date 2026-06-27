@@ -8,7 +8,7 @@ interface Alerta {
   mensaje: string
   leida: boolean
   creadaEn: string
-  estudiante: { carnet: string; nombre: string; apellido: string }
+  estudiante: { carnet: string; primerNombre: string; primerApellido: string }
   seccion: { codigo: string; nombre: string }
   visita: { motivo: string; fechaHora: string }
 }
@@ -77,7 +77,7 @@ export const AlertasPage = () => {
                   </div>
                   <p className="font-semibold text-[#0A2647]">{a.mensaje}</p>
                   <p className="text-sm text-slate-500 mt-1 flex flex-wrap gap-1">
-                    <span className="font-medium">{a.estudiante.nombre} {a.estudiante.apellido}</span>
+                    <span className="font-medium">{a.estudiante.primerNombre} {a.estudiante.primerApellido}</span>
                     <span className="text-slate-400 font-mono">({a.estudiante.carnet})</span>
                     <span className="text-slate-400">· {a.visita.motivo}</span>
                   </p>

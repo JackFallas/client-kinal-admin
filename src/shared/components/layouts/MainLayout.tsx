@@ -3,33 +3,26 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   FiHome, FiUsers, FiBook, FiActivity, FiBell,
   FiFolder, FiShield, FiLogOut, FiUser, FiX,
-  FiPlusCircle, FiMenu,
+  FiMenu, FiList,
 } from 'react-icons/fi'
 import imgLogo from '../../../assets/img/GESAPLogo.svg'
 import { useAuthStore } from '../../../features/auth/store/authStore'
 import toast from 'react-hot-toast'
 
 const navCoordinador = [
-  { to: '/portal',           icon: FiHome,       label: 'Dashboard',        end: true  },
-  { to: '/portal/usuarios',  icon: FiUsers,      label: 'Usuarios',         end: false },
-  { to: '/portal/secciones', icon: FiBook,       label: 'Secciones',        end: false },
-  { to: '/portal/visitas',   icon: FiActivity,   label: 'Visitas',          end: true  },
-  { to: '/portal/alertas',   icon: FiBell,       label: 'Alertas',          end: false },
-  { to: '/portal/documentos',icon: FiFolder,     label: 'Documentos',       end: false },
-  { to: '/portal/sesiones',  icon: FiShield,     label: 'Sesiones activas', end: false },
-]
-
-const navEnfermero = [
-  { to: '/portal/visitas/nueva', icon: FiPlusCircle, label: 'Registrar visita',  end: false },
-  { to: '/portal/visitas',       icon: FiActivity,   label: 'Historial visitas', end: true  },
-  { to: '/portal/alertas',       icon: FiBell,       label: 'Alertas',           end: false },
-  { to: '/portal/documentos',    icon: FiFolder,     label: 'Documentos',        end: false },
+  { to: '/portal',             icon: FiHome,     label: 'Dashboard',        end: true  },
+  { to: '/portal/usuarios',    icon: FiUsers,    label: 'Usuarios',         end: false },
+  { to: '/portal/secciones',   icon: FiBook,     label: 'Secciones',        end: false },
+  { to: '/portal/visitas',     icon: FiActivity, label: 'Visitas',          end: true  },
+  { to: '/portal/alertas',     icon: FiBell,     label: 'Alertas',          end: false },
+  { to: '/portal/documentos',  icon: FiFolder,   label: 'Documentos',       end: false },
+  { to: '/portal/sesiones',    icon: FiShield,   label: 'Sesiones activas', end: false },
+  { to: '/portal/audit-logs',  icon: FiList,     label: 'Logs auditoría',   end: false },
 ]
 
 const ROLE_LABELS: Record<string, string> = {
   AUDITOR:     'Auditor',
   COORDINADOR: 'Coordinador',
-  ENFERMERO:   'Enfermero/a',
 }
 
 interface SidebarProps { isOpen?: boolean; onClose?: () => void }
@@ -39,9 +32,9 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const navigate = useNavigate()
 
   const role     = user?.role ?? ''
-  const navItems = role === 'ENFERMERO' ? navEnfermero : navCoordinador
+  const navItems = navCoordinador
 
-  const displayName = user ? `${user.nombre} ${user.apellido}`.trim() : 'Usuario'
+  const displayName = user ? `${user.primerNombre} ${user.primerApellido}`.trim() : 'Usuario'
   const initials    = displayName.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
 
   const handleLogout = async () => {
@@ -131,7 +124,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 const Navbar = ({ onMenuOpen }: { onMenuOpen: () => void }) => {
   const { user } = useAuthStore()
 
-  const displayName = user ? `${user.nombre} ${user.apellido}`.trim() : 'Usuario'
+  const displayName = user ? `${user.primerNombre} ${user.primerApellido}`.trim() : 'Usuario'
   const initials    = displayName.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
 
   return (
