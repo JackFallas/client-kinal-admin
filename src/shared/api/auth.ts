@@ -1,12 +1,14 @@
 import { api } from './api'
 
-export type AdminRole = 'AUDITOR' | 'COORDINADOR' | 'ENFERMERO'
+export type AdminRole = 'AUDITOR' | 'COORDINADOR'
 
 export interface AuthUser {
   id: number
   carnet?: string
-  nombre: string
-  apellido: string
+  primerNombre: string
+  segundoNombre?: string
+  primerApellido: string
+  segundoApellido?: string
   email: string
   role: AdminRole
 }

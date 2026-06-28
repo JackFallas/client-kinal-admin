@@ -3,17 +3,16 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/kinal-admin/' : '/',
+  base: command === 'build' ? '/admin/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
     port: 5176,
     host: true,
     allowedHosts: true,
     proxy: {
-      '/kinal-api': {
+      '/api': {
         target: 'http://localhost:3003',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/kinal-api/, '/api'),
       },
     },
   },

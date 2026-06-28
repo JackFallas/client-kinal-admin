@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const api = axios.create({ baseURL: '/kinal-api' })
+export const api = axios.create({ baseURL: '/api' })
 
 api.interceptors.request.use((config) => {
   const raw = localStorage.getItem('gesap-kinal-admin-auth')
@@ -16,7 +16,7 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('gesap-kinal-admin-auth')
-      window.location.href = '/login'
+      window.location.href = import.meta.env.BASE_URL + 'login'
     }
     return Promise.reject(err)
   },

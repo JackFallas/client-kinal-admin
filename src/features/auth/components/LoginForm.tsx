@@ -17,7 +17,6 @@ const features = [
 const ROLE_LABELS: Record<string, string> = {
   AUDITOR:     'Auditor',
   COORDINADOR: 'Coordinador',
-  ENFERMERO:   'Enfermero/a',
 }
 
 export const LoginForm = () => {
@@ -177,7 +176,11 @@ export const LoginForm = () => {
             </button>
           </form>
 
-          <p className="text-center text-slate-400 text-xs mt-10">
+          <p className="text-center text-xs text-slate-400 mt-6">
+            ¿Eres estudiante?{' '}
+            <a href="https://kinal.gesap.lat" className="text-[#0E6BA8] font-semibold hover:underline">Portal del estudiante</a>
+          </p>
+          <p className="text-center text-slate-400 text-xs mt-4">
             © 2026 Jack Fallas · GESAP Kinal
           </p>
         </div>

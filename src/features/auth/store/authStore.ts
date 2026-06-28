@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { loginApi, logoutApi, type AuthUser, type AdminRole } from '../../../shared/api/auth'
 
-const ALLOWED: AdminRole[] = ['AUDITOR', 'COORDINADOR', 'ENFERMERO']
+const ALLOWED: AdminRole[] = ['AUDITOR', 'COORDINADOR']
 
 interface AuthState {
   user: AuthUser | null
