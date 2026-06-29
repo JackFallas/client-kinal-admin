@@ -11,6 +11,8 @@ export interface AuthUser {
   segundoApellido?: string
   email: string
   role: AdminRole
+  areaNivel?: string
+  areaGrado?: number
 }
 
 export const loginApi = (email: string, password: string) =>

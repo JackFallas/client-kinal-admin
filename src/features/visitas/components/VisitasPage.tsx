@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { FiPlus, FiSearch, FiActivity } from 'react-icons/fi'
+import { FiSearch, FiActivity } from 'react-icons/fi'
 import { getVisitas } from '../../../shared/api/visitas'
-import { useAuthStore } from '../../auth/store/authStore'
 
 interface Visita {
   id: number
@@ -16,14 +14,11 @@ interface Visita {
 }
 
 export const VisitasPage = () => {
-  const { user } = useAuthStore()
   const [visitas, setVisitas] = useState<Visita[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
-
-  const isEnfermero = user?.role === 'ENFERMERO'
 
   const load = () => {
     setLoading(true)
@@ -48,12 +43,6 @@ export const VisitasPage = () => {
           <h1 className="text-xl font-bold text-[#0A2647]">Historial de Visitas</h1>
           <p className="text-sm text-slate-400 mt-0.5">{visitas.length} registros</p>
         </div>
-        {isEnfermero && (
-          <Link to="/portal/visitas/nueva"
-            className="flex items-center gap-1.5 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all">
-            <FiPlus size={16} /> Nueva visita
-          </Link>
-        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

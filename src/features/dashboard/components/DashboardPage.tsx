@@ -37,24 +37,12 @@ export const DashboardPage = () => {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const isEnfermero = user?.role === 'ENFERMERO'
-
   useEffect(() => {
-    if (isEnfermero) { setLoading(false); return }
     getDashboard()
       .then((r) => setData(r.data))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [isEnfermero])
-
-  if (isEnfermero) {
-    return (
-      <div className="space-y-2">
-        <h1 className="text-xl font-bold text-[#0A2647]">Bienvenido/a, {user?.primerNombre}</h1>
-        <p className="text-sm text-slate-400">Usa el menú lateral para registrar visitas o revisar alertas.</p>
-      </div>
-    )
-  }
+  }, [])
 
   if (loading) return <p className="text-sm text-slate-400">Cargando...</p>
 
