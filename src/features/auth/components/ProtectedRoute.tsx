@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { useKickListener } from '../../../shared/hooks/useKickListener'
 import type { AdminRole } from '../../../shared/api/auth'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 export const ProtectedRoute = ({ children, roles }: Props) => {
   const { isAuthenticated, user } = useAuthStore()
+  useKickListener()
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (roles && user && !roles.includes(user.role)) return <Navigate to="/portal/dashboard" replace />
   return <>{children}</>

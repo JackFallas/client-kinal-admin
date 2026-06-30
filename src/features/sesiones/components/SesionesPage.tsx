@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { io } from 'socket.io-client'
 import { FiActivity, FiLoader, FiRefreshCw, FiLogOut, FiWifi } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { getSesionesActivas, kickSesion } from '../../../shared/api/sesiones'
@@ -72,6 +73,18 @@ export const SesionesPage = () => {
     fetchSesiones()
     const interval = setInterval(() => fetchSesiones(true), 8_000)
     return () => clearInterval(interval)
+  }, [fetchSesiones])
+
+  // Refresco instantáneo cuando alguien hace kick (sin esperar el poll de 8s)
+  useEffect(() => {
+    const socket = io(window.location.origin + '/sesiones', {
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionDelay: 2000,
+      path: '/admin-ws',
+    })
+    socket.on('sessions:changed', () => fetchSesiones(true))
+    return () => { socket.disconnect() }
   }, [fetchSesiones])
 
   useEffect(() => {
