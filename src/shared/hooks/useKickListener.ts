@@ -3,7 +3,7 @@ import { io } from 'socket.io-client'
 import { useAuthStore } from '../../features/auth/store/authStore'
 
 export const useKickListener = () => {
-  const { token, isAuthenticated, logout } = useAuthStore()
+  const { token, isAuthenticated } = useAuthStore()
 
   useEffect(() => {
     if (!isAuthenticated || !token) return
@@ -19,10 +19,13 @@ export const useKickListener = () => {
 
     socket.on('session:kicked', () => {
       socket.disconnect()
-      logout()
+      // La sesión ya quedó invalidada en el servidor por el kick — llamar a
+      // logoutApi() aquí daría 401 y el interceptor de la API pisaría este
+      // redirect. Se limpia el estado local directamente, sin ir a la red.
+      useAuthStore.setState({ user: null, token: null, isAuthenticated: false, error: null })
       window.location.replace(`${base}/login?kicked=true`)
     })
 
     return () => { socket.disconnect() }
-  }, [isAuthenticated, token, logout])
+  }, [isAuthenticated, token])
 }
