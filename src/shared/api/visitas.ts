@@ -5,10 +5,9 @@ export interface CreateVisitaPayload {
   motivo: string
   descripcion?: string
   temperatura?: number
-  presion?: string
-  peso?: number
   tratamiento?: string
   observaciones?: string
+  requiereRetirarse?: boolean
   emitirAlerta: boolean
   mensajeAlerta?: string
 }

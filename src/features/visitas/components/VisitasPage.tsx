@@ -7,7 +7,7 @@ interface Visita {
   motivo: string
   descripcion?: string
   temperatura?: number
-  presion?: string
+  requiereRetirarse?: boolean
   fechaHora: string
   estudiante: { carnet: string; primerNombre: string; primerApellido: string; seccion?: { codigo: string } }
   alerta?: { mensaje: string; leida: boolean } | null
@@ -92,7 +92,7 @@ export const VisitasPage = () => {
                   {v.descripcion && <p className="text-sm text-slate-500 mt-0.5 line-clamp-1">{v.descripcion}</p>}
                   <div className="flex items-center gap-3 mt-2 text-xs text-slate-400 flex-wrap">
                     {v.temperatura && <span>🌡 {v.temperatura}°C</span>}
-                    {v.presion && <span>💓 {v.presion}</span>}
+                    {v.requiereRetirarse && <span className="text-amber-600 font-medium">🚸 Requirió retirarse</span>}
                     <span>{new Date(v.fechaHora).toLocaleString('es-GT')}</span>
                   </div>
                 </div>
