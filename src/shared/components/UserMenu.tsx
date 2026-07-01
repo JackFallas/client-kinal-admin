@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiUser, FiCamera, FiLogOut, FiLoader } from 'react-icons/fi'
+import { FiUser, FiUserCheck, FiLogOut } from 'react-icons/fi'
 import { useAuthStore } from '../../features/auth/store/authStore'
-import { cambiarFotoPerfilApi } from '../api/auth'
+import { PerfilModal } from './PerfilModal'
 import toast from 'react-hot-toast'
 
 const ROLE_LABELS: Record<string, string> = { AUDITOR: 'Auditor', COORDINADOR: 'Coordinador' }
@@ -11,9 +11,8 @@ export const UserMenu = () => {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [subiendo, setSubiendo] = useState(false)
+  const [showPerfil, setShowPerfil] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -27,24 +26,6 @@ export const UserMenu = () => {
 
   const displayName = `${user.primerNombre} ${user.primerApellido}`.trim()
   const initials = displayName.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setSubiendo(true)
-    try {
-      const formData = new FormData()
-      formData.append('foto', file)
-      const { data } = await cambiarFotoPerfilApi(formData)
-      useAuthStore.setState((s) => ({ user: s.user ? { ...s.user, fotoPerfil: data.fotoPerfil } : s.user }))
-      toast.success('Foto de perfil actualizada')
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Error al subir la foto')
-    } finally {
-      setSubiendo(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
 
   const handleLogout = async () => {
     await logout()
@@ -75,12 +56,10 @@ export const UserMenu = () => {
             <p className="text-xs text-slate-400">{ROLE_LABELS[user.role] ?? user.role}</p>
           </div>
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={subiendo}
-            className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate-600 hover:bg-blue-50 transition-colors disabled:opacity-60"
+            onClick={() => { setShowPerfil(true); setOpen(false) }}
+            className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate-600 hover:bg-blue-50 transition-colors"
           >
-            {subiendo ? <FiLoader size={15} className="animate-spin" /> : <FiCamera size={15} />}
-            {subiendo ? 'Subiendo...' : 'Cambiar foto de perfil'}
+            <FiUserCheck size={15} /> Ver mi perfil
           </button>
           <button
             onClick={handleLogout}
@@ -91,7 +70,7 @@ export const UserMenu = () => {
         </div>
       )}
 
-      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+      {showPerfil && <PerfilModal onClose={() => setShowPerfil(false)} />}
     </div>
   )
 }
