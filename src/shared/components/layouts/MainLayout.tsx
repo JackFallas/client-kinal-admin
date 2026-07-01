@@ -54,7 +54,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-6 border-b border-white/10">
         <div className="bg-white/10 border border-white/15 p-2.5 rounded-xl flex-shrink-0">
-          <img src={imgLogo} alt="GESAP" className="h-7 w-7 object-contain object-contain" />
+          <img src={imgLogo} alt="GESAP" className="h-7 w-7 object-contain" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-white font-bold text-base leading-tight tracking-tight">GESAP Kinal</h1>
