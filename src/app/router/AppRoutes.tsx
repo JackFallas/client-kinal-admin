@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '../../features/auth/components/ProtectedRoute'
 import { LoginForm } from '../../features/auth/components/LoginForm'
+import { OlvidePasswordPage } from '../../features/auth/components/OlvidePasswordPage'
 import { MainLayout } from '../../shared/components/layouts/MainLayout'
 import { DashboardPage } from '../../features/dashboard/components/DashboardPage'
 import { VisitasPage } from '../../features/visitas/components/VisitasPage'
@@ -14,6 +15,7 @@ import { AuditLogsPage } from '../../features/audit-logs/components/AuditLogsPag
 export const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<LoginForm />} />
+    <Route path="/olvide-password" element={<OlvidePasswordPage />} />
     <Route path="/portal" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
       <Route index element={<DashboardPage />} />
       <Route path="visitas" element={<VisitasPage />} />

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { FiUserPlus, FiSearch, FiSlash, FiUsers } from 'react-icons/fi'
+import { FiUserPlus, FiSearch, FiSlash, FiUsers, FiCheckCircle, FiMail } from 'react-icons/fi'
 import { getUsuarios, createUsuario, toggleUsuarioActivo } from '../../../shared/api/usuarios'
 import { getSecciones } from '../../../shared/api/secciones'
+import { reenviarCodigoApi, verificarCuentaApi } from '../../../shared/api/auth'
 import { useAuthStore } from '../../auth/store/authStore'
 import toast from 'react-hot-toast'
 
@@ -48,6 +49,13 @@ export const UsuariosPage = () => {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm]           = useState({ ...EMPTY_FORM })
   const [saving, setSaving]       = useState(false)
+
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [verifyEmail, setVerifyEmail]         = useState('')
+  const [verifyCodigo, setVerifyCodigo]       = useState('')
+  const [codeSent, setCodeSent]               = useState(false)
+  const [verifySending, setVerifySending]     = useState(false)
+  const [verifyChecking, setVerifyChecking]   = useState(false)
 
   const isCoord = user?.role === 'COORDINADOR' || user?.role === 'AUDITOR'
 
@@ -104,6 +112,38 @@ export const UsuariosPage = () => {
     }
   }
 
+  const closeVerifyModal = () => {
+    setShowVerifyModal(false)
+    setVerifyEmail('')
+    setVerifyCodigo('')
+    setCodeSent(false)
+  }
+
+  const handleEnviarCodigo = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setVerifySending(true)
+    try {
+      await reenviarCodigoApi(verifyEmail)
+      toast.success('Código enviado. Revisa el correo del usuario.')
+      setCodeSent(true)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Error al enviar el código')
+    } finally { setVerifySending(false) }
+  }
+
+  const handleConfirmarVerificacion = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setVerifyChecking(true)
+    try {
+      await verificarCuentaApi({ email: verifyEmail, codigo: verifyCodigo.toUpperCase() })
+      toast.success('Cuenta verificada')
+      closeVerifyModal()
+      load()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Código incorrecto o expirado')
+    } finally { setVerifyChecking(false) }
+  }
+
   const inputCls = "w-full border border-blue-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ACC1] focus:border-transparent shadow-sm bg-white"
 
   return (
@@ -114,10 +154,16 @@ export const UsuariosPage = () => {
           <p className="text-sm text-slate-400 mt-0.5">{usuarios.length} registros</p>
         </div>
         {isCoord && (
-          <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all">
-            <FiUserPlus size={16} /> Nuevo usuario
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowVerifyModal(true)}
+              className="flex items-center gap-1.5 border border-blue-200 text-[#0E6BA8] hover:bg-blue-50 text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all">
+              <FiCheckCircle size={16} /> Verificar cuenta
+            </button>
+            <button onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all">
+              <FiUserPlus size={16} /> Nuevo usuario
+            </button>
+          </div>
         )}
       </div>
 
@@ -229,6 +275,69 @@ export const UsuariosPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
+            <div className="p-5 sm:p-6">
+              <h2 className="text-lg font-bold text-[#0A2647] mb-1">Verificar cuenta</h2>
+              <p className="text-sm text-slate-400 mb-5">
+                {codeSent
+                  ? 'Ingresa el código de 6 caracteres que llegó a ese correo.'
+                  : 'Escribe el correo del usuario para enviarle un código de verificación.'}
+              </p>
+
+              {!codeSent ? (
+                <form onSubmit={handleEnviarCodigo} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Correo electrónico</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <FiMail className="text-[#0E6BA8]" size={16} />
+                      </div>
+                      <input type="email" value={verifyEmail} onChange={(e) => setVerifyEmail(e.target.value)}
+                        required placeholder="usuario@kinal.edu.gt" className={`${inputCls} pl-9`} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button type="button" onClick={closeVerifyModal}
+                      className="flex-1 border border-blue-200 text-slate-600 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors">
+                      Cancelar
+                    </button>
+                    <button type="submit" disabled={verifySending}
+                      className="flex-1 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-60">
+                      {verifySending ? 'Enviando...' : 'Enviar código'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleConfirmarVerificacion} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#144272] mb-1.5 uppercase tracking-wide">Código de 6 caracteres</label>
+                    <input type="text" value={verifyCodigo} onChange={(e) => setVerifyCodigo(e.target.value.toUpperCase().slice(0, 6))}
+                      required maxLength={6} placeholder="AB12CD"
+                      className={`${inputCls} text-center text-lg font-mono tracking-[0.3em] uppercase`} />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button type="button" onClick={() => setCodeSent(false)}
+                      className="flex-1 border border-blue-200 text-slate-600 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors">
+                      Atrás
+                    </button>
+                    <button type="submit" disabled={verifyChecking || verifyCodigo.length < 6}
+                      className="flex-1 bg-gradient-to-r from-[#0A2647] to-[#0E6BA8] hover:from-[#144272] hover:to-[#00ACC1] text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-60">
+                      {verifyChecking ? 'Verificando...' : 'Verificar'}
+                    </button>
+                  </div>
+                  <button type="button" onClick={handleEnviarCodigo} disabled={verifySending}
+                    className="w-full text-center text-xs text-slate-400 hover:text-[#0E6BA8] transition-colors disabled:opacity-50">
+                    {verifySending ? 'Reenviando...' : 'Reenviar código'}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

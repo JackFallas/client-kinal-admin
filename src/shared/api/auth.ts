@@ -29,3 +29,15 @@ export const cambiarFotoPerfilApi = (formData: FormData) =>
   })
 
 export const eliminarFotoPerfilApi = () => api.delete('/usuarios/foto-perfil')
+
+export const olvidePasswordApi = (email: string) =>
+  api.post<{ message: string }>('/auth/olvide-password', { email })
+
+export const restablecerPasswordApi = (data: { codigo: string; token?: string; email?: string; password: string }) =>
+  api.post<{ message: string }>('/auth/restablecer-password', data)
+
+export const reenviarCodigoApi = (email: string) =>
+  api.post<{ message: string }>('/auth/reenviar-codigo', { email })
+
+export const verificarCuentaApi = (data: { codigo: string; email: string }) =>
+  api.post<{ message: string }>('/auth/verificar', data)
