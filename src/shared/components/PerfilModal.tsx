@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { FiX, FiCamera, FiMail, FiShield, FiBook, FiLoader } from 'react-icons/fi'
 import { useAuthStore } from '../../features/auth/store/authStore'
 import { cambiarFotoPerfilApi } from '../api/auth'
@@ -35,7 +36,7 @@ export const PerfilModal = ({ onClose }: { onClose: () => void }) => {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
         <div className="p-6">
@@ -102,6 +103,7 @@ export const PerfilModal = ({ onClose }: { onClose: () => void }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

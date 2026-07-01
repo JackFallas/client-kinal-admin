@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { FiX, FiUsers } from 'react-icons/fi'
 import { getSeccion } from '../../../shared/api/secciones'
 
@@ -31,7 +32,7 @@ export const SeccionDetailModal = ({ seccionId, onClose }: { seccionId: number; 
       .finally(() => setLoading(false))
   }, [seccionId])
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
         <div className="p-5 sm:p-6">
@@ -74,6 +75,7 @@ export const SeccionDetailModal = ({ seccionId, onClose }: { seccionId: number; 
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
