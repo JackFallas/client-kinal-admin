@@ -1,9 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { io } from 'socket.io-client'
-import { FiActivity, FiLoader, FiRefreshCw, FiLogOut, FiWifi } from 'react-icons/fi'
+import { FiActivity, FiLoader, FiRefreshCw, FiLogOut, FiWifi, FiFilter, FiSmartphone, FiTablet, FiMonitor } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { getSesionesActivas, kickSesion } from '../../../shared/api/sesiones'
 import { useAuthStore } from '../../auth/store/authStore'
+
+interface Dispositivo {
+  tipo: 'Móvil' | 'Tablet' | 'PC'
+  so: string
+  navegador: string
+}
 
 interface Sesion {
   id: number
@@ -12,6 +18,7 @@ interface Sesion {
   userAgent?: string
   loginAt: string
   lastActiveAt: string
+  dispositivo: Dispositivo
   usuario: {
     id: number
     primerNombre: string
@@ -36,6 +43,27 @@ const ROLE_COLORS: Record<string, string> = {
   ESTUDIANTE:  'bg-slate-100 text-slate-600',
 }
 
+const DISPOSITIVO_ICON: Record<Dispositivo['tipo'], typeof FiSmartphone> = {
+  'Móvil': FiSmartphone,
+  'Tablet': FiTablet,
+  'PC': FiMonitor,
+}
+
+const ROLE_OPTIONS = [
+  { value: '', label: 'Todos los roles' },
+  { value: 'AUDITOR', label: 'Auditor' },
+  { value: 'COORDINADOR', label: 'Coordinador' },
+  { value: 'ENFERMERO', label: 'Enfermero' },
+  { value: 'ESTUDIANTE', label: 'Estudiante' },
+]
+
+const DISPOSITIVO_OPTIONS = [
+  { value: '', label: 'Todos los dispositivos' },
+  { value: 'PC', label: 'PC' },
+  { value: 'Móvil', label: 'Móvil' },
+  { value: 'Tablet', label: 'Tablet' },
+]
+
 const actividadInfo = (lastActive: string) => {
   const mins = (Date.now() - new Date(lastActive).getTime()) / 60_000
   if (mins < 5)  return { dot: 'bg-emerald-500', label: 'Activo',   text: 'text-emerald-600', pulse: true  }
@@ -53,12 +81,17 @@ export const SesionesPage = () => {
   const [kicking, setKicking]       = useState<number | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [secondsAgo, setSecondsAgo] = useState(0)
+  const [filtroRole, setFiltroRole] = useState('')
+  const [filtroDispositivo, setFiltroDispositivo] = useState('')
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchSesiones = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const { data } = await getSesionesActivas()
+      const { data } = await getSesionesActivas({
+        role: filtroRole || undefined,
+        tipoDispositivo: filtroDispositivo || undefined,
+      })
       setSesiones(data)
       setLastUpdate(new Date())
       setSecondsAgo(0)
@@ -67,7 +100,7 @@ export const SesionesPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [filtroRole, filtroDispositivo])
 
   useEffect(() => {
     fetchSesiones()
@@ -135,6 +168,23 @@ export const SesionesPage = () => {
         </button>
       </div>
 
+      {/* Filtros */}
+      <div className="bg-white/80 border border-blue-100 rounded-2xl p-4">
+        <p className="text-xs font-bold text-[#144272] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+          <FiFilter size={11} /> Filtros
+        </p>
+        <div className="grid grid-cols-2 gap-3 max-w-md">
+          <select value={filtroRole} onChange={(e) => setFiltroRole(e.target.value)}
+            className="border border-blue-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00ACC1]">
+            {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select value={filtroDispositivo} onChange={(e) => setFiltroDispositivo(e.target.value)}
+            className="border border-blue-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#00ACC1]">
+            {DISPOSITIVO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+
       {/* Leyenda */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 bg-white/80 border border-blue-100 rounded-xl px-4 py-2.5">
         <span className="font-semibold text-[#144272]">Última actividad:</span>
@@ -191,6 +241,10 @@ export const SesionesPage = () => {
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-400 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            {(() => { const Icon = DISPOSITIVO_ICON[s.dispositivo?.tipo ?? 'PC']; return <Icon size={11} /> })()}
+                            {s.dispositivo?.so ?? '—'} · {s.dispositivo?.navegador ?? '—'}
+                          </span>
                           <span className="font-mono">{s.ipAddress ?? '—'}</span>
                           <span>{new Date(s.loginAt).toLocaleString('es-GT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -217,7 +271,7 @@ export const SesionesPage = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#EBF5FB] border-b border-blue-100">
-                {['Estado', 'Usuario', 'Rol', 'Sección', 'IP', 'Inicio sesión', 'Acciones'].map((h) => (
+                {['Estado', 'Usuario', 'Rol', 'Sección', 'Dispositivo', 'IP', 'Inicio sesión', 'Acciones'].map((h) => (
                   <th key={h} className="text-left px-5 py-3 text-xs font-bold text-[#144272] uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -225,14 +279,14 @@ export const SesionesPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-14">
+                  <td colSpan={8} className="text-center py-14">
                     <FiLoader className="animate-spin text-[#0E6BA8] mx-auto" size={24} />
                     <p className="text-slate-400 text-sm mt-2">Cargando sesiones...</p>
                   </td>
                 </tr>
               ) : sesiones.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12">
+                  <td colSpan={8} className="text-center py-12">
                     <FiWifi className="mx-auto text-slate-300 mb-2" size={32} />
                     <p className="text-slate-400 text-sm font-medium">No hay sesiones activas</p>
                     <p className="text-slate-300 text-xs mt-1">Las sesiones aparecen cuando los usuarios inician sesión</p>
@@ -278,6 +332,12 @@ export const SesionesPage = () => {
                             {s.usuario.seccion.codigo}
                           </span>
                         ) : '—'}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-500 text-xs">
+                        <span className="flex items-center gap-1.5">
+                          {(() => { const Icon = DISPOSITIVO_ICON[s.dispositivo?.tipo ?? 'PC']; return <Icon size={13} className="text-slate-400" /> })()}
+                          <span>{s.dispositivo?.so ?? '—'} · {s.dispositivo?.navegador ?? '—'}</span>
+                        </span>
                       </td>
                       <td className="px-5 py-3.5 text-slate-400 text-xs font-mono">
                         {s.ipAddress ?? '—'}
