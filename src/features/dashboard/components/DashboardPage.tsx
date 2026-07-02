@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
-import { FiUsers, FiActivity, FiTrendingUp, FiBell, FiFolder } from 'react-icons/fi'
+import { useEffect, useState, useCallback } from 'react'
+import { io } from 'socket.io-client'
+import { FiUsers, FiActivity, FiTrendingUp, FiBell, FiFolder, FiWifi } from 'react-icons/fi'
 import { getDashboard } from '../../../shared/api/dashboard'
 import { useAuthStore } from '../../auth/store/authStore'
 
 interface DashboardData {
   totalEstudiantes: number
   totalActivos: number
+  estudiantesOnline: number
   visitasHoy: number
   visitasSemana: number
   alertasNoLeidas: number
@@ -14,14 +16,17 @@ interface DashboardData {
 }
 
 const StatCard = ({
-  icon: Icon, label, value, sub, color,
+  icon: Icon, label, value, sub, color, live,
 }: {
-  icon: React.ElementType; label: string; value: number; sub?: string; color: string
+  icon: React.ElementType; label: string; value: number; sub?: string; color: string; live?: boolean
 }) => (
   <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-blue-50">
     <div className="flex items-start justify-between mb-3">
       <div className="min-w-0 flex-1 pr-2">
-        <p className="text-xs text-slate-400 font-medium uppercase tracking-wide leading-tight">{label}</p>
+        <p className="text-xs text-slate-400 font-medium uppercase tracking-wide leading-tight flex items-center gap-1.5">
+          {label}
+          {live && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Tiempo real" />}
+        </p>
         {sub && <p className="text-xs text-slate-300 mt-0.5">{sub}</p>}
       </div>
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -37,12 +42,27 @@ export const DashboardPage = () => {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchDashboard = useCallback((silent = false) => {
+    if (!silent) setLoading(true)
     getDashboard()
       .then((r) => setData(r.data))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { fetchDashboard() }, [fetchDashboard])
+
+  // Estudiantes en línea se recalcula al instante cuando alguien entra/sale (mismo evento que usan sesiones activas y el kick)
+  useEffect(() => {
+    const socket = io(window.location.origin + '/sesiones', {
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionDelay: 2000,
+      path: '/admin-ws',
+    })
+    socket.on('sessions:changed', () => fetchDashboard(true))
+    return () => { socket.disconnect() }
+  }, [fetchDashboard])
 
   if (loading) return <p className="text-sm text-slate-400">Cargando...</p>
 
@@ -56,7 +76,8 @@ export const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard icon={FiUsers}    label="Estudiantes activos"  value={data?.totalActivos ?? 0}                   color="bg-[#0E6BA8]" />
+        <StatCard icon={FiWifi}     label="En línea ahora"       value={data?.estudiantesOnline ?? 0}             color="bg-emerald-500" live />
+        <StatCard icon={FiUsers}    label="Cuentas habilitadas"  value={data?.totalActivos ?? 0}                   color="bg-[#0E6BA8]" />
         <StatCard icon={FiActivity} label="Visitas hoy"          value={data?.visitasHoy ?? 0}                    color="bg-[#00ACC1]" />
         <StatCard icon={FiTrendingUp} label="Visitas (7 días)"   value={data?.visitasSemana ?? 0}                 color="bg-[#26A69A]" />
         <StatCard icon={FiBell}     label="Alertas sin leer"     value={data?.alertasNoLeidas ?? 0}               color="bg-amber-500" />
