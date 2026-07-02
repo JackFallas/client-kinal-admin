@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { FiShield, FiFilter, FiRefreshCw, FiLoader } from 'react-icons/fi'
+import { Fragment, useState, useEffect, useCallback } from 'react'
+import { FiShield, FiFilter, FiRefreshCw, FiLoader, FiChevronDown, FiChevronRight } from 'react-icons/fi'
 import { getAuditLogs } from '../../../shared/api/auditLogs'
 import { useAuthStore } from '../../auth/store/authStore'
 import toast from 'react-hot-toast'
@@ -16,6 +16,19 @@ interface AuditLog {
   nivelArea?: string
   gradoArea?: number
   fecha: string
+}
+
+interface DetallesParsed {
+  descripcion?: string
+  ruta?: string
+  actor?: string | null
+  rolActor?: string | null
+  cambios?: Record<string, unknown>
+}
+
+const parseDetalles = (detalles?: string): DetallesParsed | null => {
+  if (!detalles) return null
+  try { return JSON.parse(detalles) } catch { return null }
 }
 
 const METODO_LABEL: Record<string, { label: string; color: string }> = {
@@ -44,6 +57,7 @@ export const AuditLogsPage = () => {
   const [entidad, setEntidad]   = useState('')
   const [desde, setDesde]       = useState('')
   const [hasta, setHasta]       = useState('')
+  const [expandido, setExpandido] = useState<number | null>(null)
 
   const LIMIT = 50
 
@@ -134,24 +148,37 @@ export const AuditLogsPage = () => {
             <div className="md:hidden divide-y divide-blue-50">
               {logs.map((l) => {
                 const m = METODO_LABEL[l.accion] ?? { label: l.accion, color: 'bg-slate-100 text-slate-600' }
+                const d = parseDetalles(l.detalles)
+                const abierto = expandido === l.id
                 return (
                   <div key={l.id} className="px-4 py-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.color}`}>{m.label}</span>
-                          <span className="text-xs font-semibold text-[#0A2647]">{l.entidad}</span>
-                          {l.entidadId && <span className="text-[10px] text-slate-400 font-mono">#{l.entidadId}</span>}
+                    <button className="w-full text-left" onClick={() => setExpandido(abierto ? null : l.id)}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.color}`}>{m.label}</span>
+                            <span className="text-xs font-semibold text-[#0A2647]">{d?.actor ?? l.carnet ?? `ID:${l.usuarioId ?? '—'}`}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-0.5">{d?.descripcion ?? `${l.accion} en ${l.entidad}`}</p>
+                          {l.ip && <p className="text-[10px] text-slate-400 mt-0.5">{l.ip}</p>}
                         </div>
-                        <p className="text-[10px] text-slate-400">
-                          {l.carnet ?? `ID:${l.usuarioId ?? '—'}`}
-                          {l.ip && ` · ${l.ip}`}
-                        </p>
+                        <span className="text-[10px] text-slate-300 shrink-0 tabular-nums">
+                          {new Date(l.fecha).toLocaleString('es-GT', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-slate-300 shrink-0 tabular-nums">
-                        {new Date(l.fecha).toLocaleString('es-GT', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
-                      </span>
-                    </div>
+                    </button>
+                    {abierto && (
+                      <div className="mt-2 bg-[#F8FBFF] border border-blue-100 rounded-lg p-2.5 text-[11px] text-slate-500 space-y-1">
+                        <p className="font-semibold text-[#144272] uppercase tracking-wide text-[10px]">Detalle técnico</p>
+                        <p><span className="font-semibold text-[#144272]">Entidad:</span> {l.entidad}{l.entidadId ? ` #${l.entidadId}` : ''}</p>
+                        <p><span className="font-semibold text-[#144272]">Ruta:</span> <span className="font-mono">{d?.ruta ?? '—'}</span></p>
+                        {d?.cambios && Object.keys(d.cambios).length > 0 && (
+                          <pre className="whitespace-pre-wrap break-all font-mono text-[10px] bg-white border border-blue-50 rounded p-2 mt-1">
+                            {JSON.stringify(d.cambios, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -162,7 +189,7 @@ export const AuditLogsPage = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#EBF5FB] border-b border-blue-100">
-                    {['Fecha', 'Acción', 'Entidad', 'ID Entidad', 'Usuario/Carnet', 'IP', 'Nivel', 'Grado'].map((h) => (
+                    {['', 'Fecha', 'Acción', 'Usuario', 'Qué hizo', 'IP', 'Nivel', 'Grado'].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-bold text-[#144272] uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -170,21 +197,43 @@ export const AuditLogsPage = () => {
                 <tbody>
                   {logs.map((l, i) => {
                     const m = METODO_LABEL[l.accion] ?? { label: l.accion, color: 'bg-slate-100 text-slate-600' }
+                    const d = parseDetalles(l.detalles)
+                    const abierto = expandido === l.id
+                    const tieneDetalle = !!(d?.ruta || (d?.cambios && Object.keys(d.cambios).length > 0))
                     return (
-                      <tr key={l.id} className={`border-b border-blue-50 ${i % 2 !== 0 ? 'bg-[#F8FBFF]' : ''} hover:bg-blue-50/30`}>
-                        <td className="px-4 py-3 text-xs text-slate-400 tabular-nums whitespace-nowrap">
-                          {new Date(l.fecha).toLocaleString('es-GT', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.color}`}>{m.label}</span>
-                        </td>
-                        <td className="px-4 py-3 text-xs font-semibold text-[#0A2647]">{l.entidad}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400 font-mono">{l.entidadId ?? '—'}</td>
-                        <td className="px-4 py-3 text-xs text-slate-500">{l.carnet ?? (l.usuarioId ? `ID:${l.usuarioId}` : '—')}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400 font-mono">{l.ip ?? '—'}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{l.nivelArea ?? '—'}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{l.gradoArea ?? '—'}</td>
-                      </tr>
+                      <Fragment key={l.id}>
+                        <tr className={`border-b border-blue-50 ${i % 2 !== 0 ? 'bg-[#F8FBFF]' : ''} hover:bg-blue-50/30 ${tieneDetalle ? 'cursor-pointer' : ''}`}
+                          onClick={() => tieneDetalle && setExpandido(abierto ? null : l.id)}>
+                          <td className="px-2 py-3 text-slate-300">
+                            {tieneDetalle && (abierto ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />)}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-400 tabular-nums whitespace-nowrap">
+                            {new Date(l.fecha).toLocaleString('es-GT', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.color}`}>{m.label}</span>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold text-[#0A2647] whitespace-nowrap">{d?.actor ?? l.carnet ?? (l.usuarioId ? `ID:${l.usuarioId}` : '—')}</td>
+                          <td className="px-4 py-3 text-xs text-slate-600">{d?.descripcion ?? `${l.accion} en ${l.entidad}`}</td>
+                          <td className="px-4 py-3 text-xs text-slate-400 font-mono">{l.ip ?? '—'}</td>
+                          <td className="px-4 py-3 text-xs text-slate-400">{l.nivelArea ?? '—'}</td>
+                          <td className="px-4 py-3 text-xs text-slate-400">{l.gradoArea ?? '—'}</td>
+                        </tr>
+                        {abierto && tieneDetalle && (
+                          <tr className="border-b border-blue-50 bg-[#F8FBFF]">
+                            <td colSpan={8} className="px-6 py-3 text-xs text-slate-500 space-y-1.5">
+                              <p className="font-semibold text-[#144272] uppercase tracking-wide text-[10px]">Detalle técnico</p>
+                              <p><span className="font-semibold text-[#144272]">Entidad:</span> {l.entidad}{l.entidadId ? ` #${l.entidadId}` : ''}</p>
+                              <p><span className="font-semibold text-[#144272]">Ruta:</span> <span className="font-mono">{d?.ruta ?? '—'}</span></p>
+                              {d?.cambios && Object.keys(d.cambios).length > 0 && (
+                                <pre className="whitespace-pre-wrap break-all font-mono text-[11px] bg-white border border-blue-100 rounded-lg p-3">
+                                  {JSON.stringify(d.cambios, null, 2)}
+                                </pre>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </tbody>
