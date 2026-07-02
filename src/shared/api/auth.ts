@@ -16,10 +16,19 @@ export interface AuthUser {
   fotoPerfil?: string | null
 }
 
-export const loginApi = (email: string, password: string) =>
-  api.post<{ access_token: string; usuario: AuthUser }>('/auth/login', { email, password })
+export const loginApi = (email: string, password: string, recordar?: boolean) =>
+  api.post<{ access_token: string; usuario: AuthUser }>('/auth/login', { email, password, recordar })
 
 export const logoutApi = () => api.post('/auth/logout')
+
+export interface PerfilPreview {
+  nombre: string
+  fotoPerfil: string | null
+  role: AdminRole | 'ENFERMERO' | 'ESTUDIANTE'
+}
+
+export const verificarEmailApi = (email: string) =>
+  api.post<PerfilPreview>('/auth/verificar-email', { email })
 
 export const getMeApi = () => api.get<AuthUser>('/auth/me')
 
